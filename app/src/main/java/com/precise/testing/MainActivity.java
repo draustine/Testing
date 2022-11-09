@@ -21,6 +21,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST = 101;
@@ -30,8 +32,6 @@ public class MainActivity extends AppCompatActivity {
     //private Button sendButton, previewButton, getButton;
     private EditText phoneInput, messageInput, smsRate, simSlot, carrier;
     private TextView display1, display2;
-
-
 
 
     @Override
@@ -60,6 +60,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getFiles(View view) {
+        SubscriptionManager localSubscriptionManager = SubscriptionManager.from(this);
+
+
+        if (localSubscriptionManager.getActiveSubscriptionInfoCount() > 1) {
+            //if there are two sims in dual sim mobile
+            List localList = localSubscriptionManager.getActiveSubscriptionInfoList();
+            SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(0);
+            SubscriptionInfo simInfo1 = (SubscriptionInfo) localList.get(1);
+
+            final String sim1 = simInfo.getDisplayName().toString();
+            final String sim2 = simInfo1.getDisplayName().toString();
+            String comment = "Carrier is: " + sim1 + "\n" + "Operator name is: " + sim2;
+            fillDisplay2(comment);
+
+        } else {
+            //if there is 1 sim in dual sim mobile
+            TelephonyManager tManager = (TelephonyManager) getBaseContext()
+                    .getSystemService(Context.TELEPHONY_SERVICE);
+
+            String sim1 = tManager.getNetworkOperatorName();
+
+        }
+
+
+
     }
 
     public void viewMessages(View view) {
@@ -83,8 +108,10 @@ public class MainActivity extends AppCompatActivity {
         int simSlotCount = subsManager.getActiveSubscriptionInfoCountMax();
         TelephonyManager manager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
         carrierName = manager.getNetworkOperatorName();
+        String operatorName = manager.getSimOperatorName();
+        String comment = "Carrier is: " + carrierName + "\n" + "Operator name is: " + operatorName;
 
-        fillDisplay2(carrierName);
+        fillDisplay2(comment);
         switch(serviceProvider){
             case "GLO":
                 on = "ACN ON";
