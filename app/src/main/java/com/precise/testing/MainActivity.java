@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
             fillDisplay1("message was sent using sim 1");
 
         } else if (sim_Slot == 2) {
-            SmsManager.getSmsManagerForSubscriptionId(0).sendTextMessage(phone, null, message, null, null);
+            SmsManager.getSmsManagerForSubscriptionId(1).sendTextMessage(phone, null, message, null, null);
             fillDisplay1("message was sent using sim 2");
         } else {
             smsManager.sendTextMessage(phone, null, message, null, null);
