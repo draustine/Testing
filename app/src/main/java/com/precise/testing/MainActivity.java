@@ -17,6 +17,7 @@ import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,8 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private SubscriptionInfo subsInfo;
     private SubscriptionManager subsManager;
     //private Button sendButton, previewButton, getButton;
-    private EditText phoneInput, messageInput, smsRate, simSlot, carrier;
+    private EditText phoneInput, messageInput, simSlot;
     private TextView display1, display2;
+    private String carrier, provider;
 
 
     @Override
@@ -43,9 +45,7 @@ public class MainActivity extends AppCompatActivity {
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         phoneInput = findViewById(R.id.phoneNumber);
         messageInput = findViewById(R.id.message);
-        smsRate = findViewById(R.id.unitCost);
         simSlot = findViewById(R.id.simSlot);
-        carrier = findViewById(R.id.networkSelect);
         display1 = findViewById(R.id.display1);
         display2 = findViewById(R.id.textDisplay);
         getPermission();
@@ -79,31 +79,21 @@ public class MainActivity extends AppCompatActivity {
         subsManager =(SubscriptionManager)getApplicationContext().getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
         {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_RPS);
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-
-
-            } else {
-
-
-            }
-            int i = subsManager.getActiveSubscriptionInfoCount();
-            if (i > 1) {
-                //if there are two sims in dual sim mobile
-                List localList = subsManager.getActiveSubscriptionInfoList();
-                SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(id);
-                name = simInfo.getDisplayName().toString();
-            } else {
-                //if there is 1 sim in dual sim mobile
-                TelephonyManager tManager = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
-                name = tManager.getNetworkOperatorName();
-            }
+        }
+        int i = subsManager.getActiveSubscriptionInfoCount();
+        if (i > 1) {
+            //if there are two sims in dual sim mobile
+            List localList = subsManager.getActiveSubscriptionInfoList();
+            SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(id);
+            name = simInfo.getDisplayName().toString();
+        } else {
+            //if there is 1 sim in dual sim mobile
+            TelephonyManager tManager = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+            name = tManager.getNetworkOperatorName();
         }
         return name;
     }
@@ -125,18 +115,27 @@ public class MainActivity extends AppCompatActivity {
         String message;
         int slot = parseInt(simSlot.getText().toString());
         message = "Sending the message from sim " + slot;
-        String phoneNumber = phoneInput.getText().toString();
-        messageSender(message, phoneNumber);
+        String phoneNumber;
+        if (TextUtils.isEmpty(phoneInput.getText().toString())){
+            phoneNumber = phoneInput.getText().toString();
+        } else {
+            phoneNumber = "08108020030";
+        }
+        fillDisplay1(phoneNumber);
+        //messageSender(message, phoneNumber);
     }
 
     private void messageSender(String message, String phone) {
         int sim_Slot;
         String carrierName, on, off, shortCode;
         sim_Slot = parseInt(simSlot.getText().toString());
-        carrierName = getSimCarrierName(sim_Slot-1);
+        sim_Slot = sim_Slot - 1;
+        carrierName = getSimCarrierName(sim_Slot);
         String comment = "The carrier is: " + carrierName;
         fillDisplay2(comment);
-        String provider = carrierName.substring(0, 2).toUpperCase();
+        String provider = carrierName.substring(0, 3).toUpperCase();
+        comment = "The provider is: " + provider;
+        fillDisplay1(comment);
         switch(provider){
             case "GLO":
                 on = "ACN ON";
