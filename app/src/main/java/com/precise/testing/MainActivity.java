@@ -7,6 +7,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -65,9 +66,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private SmsManager smsSender(int id){
+    private SmsManager smsSender(int id) {
+        SubscriptionManager localSusManager = this.getSystemService(SubscriptionManager.class);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_RPS);
+        }
+        SubscriptionInfo subsInfo = localSusManager.getActiveSubscriptionInfoForSimSlotIndex(id);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            smsManager = getApplicationContext().getSystemService(SmsManager.class) .createForSubscriptionId(id);
+            smsManager = getApplicationContext().getSystemService(SmsManager.class) .createForSubscriptionId(subsInfo.getSubscriptionId());
         } else {
             smsManager = SmsManager.getSmsManagerForSubscriptionId(id);
         }
@@ -122,15 +128,14 @@ public class MainActivity extends AppCompatActivity {
             phoneNumber = phoneInput.getText().toString();
         }
         fillDisplay1(phoneNumber);
-        //messageSender(message, phoneNumber);
+        messageSender(message, phoneNumber);
     }
 
     private void messageSender(String message, String phone) {
         int sim_Slot;
         String carrierName, on, off, shortCode;
         sim_Slot = parseInt(simSlot.getText().toString());
-        sim_Slot = sim_Slot - 1;
-        carrierName = getSimCarrierName(sim_Slot);
+        carrierName = getSimCarrierName(sim_Slot-1);
         String comment = "The carrier is: " + carrierName;
         fillDisplay2(comment);
         String provider = carrierName.substring(0, 3).toUpperCase();
@@ -149,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         }
         smsManager = smsSender(sim_Slot-1);
         smsManager.sendTextMessage(phone, null, message, null, null);
-        fillDisplay1("Message was sent using sim " + sim_Slot);
+        fillDisplay1("Message was sent using " + provider);
 
     }
 
