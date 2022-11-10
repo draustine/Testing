@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
         carrier = findViewById(R.id.networkSelect);
         display1 = findViewById(R.id.display1);
         display2 = findViewById(R.id.textDisplay);
-        smsManager = getApplicationContext().getSystemService(SmsManager.class);
         getPermission();
 
     }
@@ -66,35 +65,58 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void getFiles(View view) {
-        SubscriptionManager localSubscriptionManager = SubscriptionManager.from(this);
-        int i = localSubscriptionManager.getActiveSubscriptionInfoCount();
-
-        if (i > 1) {
-            //if there are two sims in dual sim mobile
-            List localList = localSubscriptionManager.getActiveSubscriptionInfoList();
-            SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(0);
-            SubscriptionInfo simInfo1 = (SubscriptionInfo) localList.get(1);
-
-            final String sim1 = simInfo.getDisplayName().toString();
-            final String sim2 = simInfo1.getDisplayName().toString();
-            String comment = "Carrier sim 1 is: " + sim1 + "\n" + "Carrier sim 2 is: " + sim2;
-            fillDisplay2(comment);
-
-
-
+    private SmsManager smsSender(int id){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            smsManager = getApplicationContext().getSystemService(SmsManager.class) .createForSubscriptionId(id);
         } else {
-            //if there is 1 sim in dual sim mobile
-            TelephonyManager tManager = (TelephonyManager) getBaseContext()
-                    .getSystemService(Context.TELEPHONY_SERVICE);
-
-            String sim1 = tManager.getNetworkOperatorName();
-
+            smsManager = SmsManager.getSmsManagerForSubscriptionId(id);
         }
+        return smsManager;
+    }
+
+    private String getSimCarrierName(int id){
+        String name = "";
+        subsManager =(SubscriptionManager)getApplicationContext().getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
+        {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+
+
+            } else {
+
+
+            }
+            int i = subsManager.getActiveSubscriptionInfoCount();
+            if (i > 1) {
+                //if there are two sims in dual sim mobile
+                List localList = subsManager.getActiveSubscriptionInfoList();
+                SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(id);
+                name = simInfo.getDisplayName().toString();
+            } else {
+                //if there is 1 sim in dual sim mobile
+                TelephonyManager tManager = (TelephonyManager) getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+                name = tManager.getNetworkOperatorName();
+            }
+        }
+        return name;
+    }
+
+    public void getFiles(View view) {
+
 
 
 
     }
+
+
+
 
     public void viewMessages(View view) {
     }
@@ -109,19 +131,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void messageSender(String message, String phone) {
         int sim_Slot;
-        String carrierName;
+        String carrierName, on, off, shortCode;
         sim_Slot = parseInt(simSlot.getText().toString());
-        subsManager = SubscriptionManager.from(this);
-        String on, off, shortCode;
-        String serviceProvider = carrier.getText().toString().toUpperCase();
-        int simSlotCount = subsManager.getActiveSubscriptionInfoCountMax();
-        TelephonyManager manager = (TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
-        carrierName = manager.getNetworkOperatorName();
-        String operatorName = manager.getSimOperatorName();
-        String comment = "Carrier is: " + carrierName + "\n" + "Operator name is: " + operatorName;
-
+        carrierName = getSimCarrierName(sim_Slot-1);
+        String comment = "The carrier is: " + carrierName;
         fillDisplay2(comment);
-        switch(serviceProvider){
+        String provider = carrierName.substring(0, 2).toUpperCase();
+        switch(provider){
             case "GLO":
                 on = "ACN ON";
                 off = "ACN OFF";
@@ -132,24 +148,9 @@ public class MainActivity extends AppCompatActivity {
                 on = "EOCNON";
                 off = "EOCNOFF";
         }
-        if(sim_Slot == 1) {
-            fillDisplay1("message was sent using sim 1");
-            //SmsManager.getSmsManagerForSubscriptionId(0).sendTextMessage(phone, null, message, null, null);
-            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(0);
-            smsManager.sendTextMessage(phone, null, message, null, null);
-            fillDisplay1("message was sent using sim 1");
-
-        } else if (sim_Slot == 2) {
-            //SmsManager.getSmsManagerForSubscriptionId(1).sendTextMessage(phone, null, message, null, null);
-            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(1);
-            smsManager.sendTextMessage(phone, null, message, null, null);
-            fillDisplay1("message was sent using sim 2");
-        } else {
-            int id = SmsManager.getDefaultSmsSubscriptionId();
-            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(id);
-            smsManager.sendTextMessage(phone, null, message, null, null);
-            fillDisplay1("message was sent using default sim");
-        }
+        smsManager = smsSender(sim_Slot-1);
+        smsManager.sendTextMessage(phone, null, message, null, null);
+        fillDisplay1("Message was sent using sim " + sim_Slot);
 
     }
 
