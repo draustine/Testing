@@ -117,9 +117,9 @@ public class MainActivity extends AppCompatActivity {
         message = "Sending the message from sim " + slot;
         String phoneNumber;
         if (TextUtils.isEmpty(phoneInput.getText().toString())){
-            phoneNumber = phoneInput.getText().toString();
-        } else {
             phoneNumber = "08108020030";
+        } else {
+            phoneNumber = phoneInput.getText().toString();
         }
         fillDisplay1(phoneNumber);
         //messageSender(message, phoneNumber);
