@@ -10,6 +10,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
@@ -26,6 +27,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST = 101;
+    private static final int REQUEST_RPS = 0;
     private SmsManager smsManager;
     private SubscriptionInfo subsInfo;
     private SubscriptionManager subsManager;
@@ -51,19 +53,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     private void getPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS);
         if (!(permissionCheck == PackageManager.PERMISSION_GRANTED)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS},
                     PERMISSION_REQUEST);
         }
+        int REQUEST_RPS = 0;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_RPS);
+        }
     }
 
     public void getFiles(View view) {
         SubscriptionManager localSubscriptionManager = SubscriptionManager.from(this);
+        int i = localSubscriptionManager.getActiveSubscriptionInfoCount();
 
-
-        if (localSubscriptionManager.getActiveSubscriptionInfoCount() > 1) {
+        if (i > 1) {
             //if there are two sims in dual sim mobile
             List localList = localSubscriptionManager.getActiveSubscriptionInfoList();
             SubscriptionInfo simInfo = (SubscriptionInfo) localList.get(0);
@@ -71,8 +78,10 @@ public class MainActivity extends AppCompatActivity {
 
             final String sim1 = simInfo.getDisplayName().toString();
             final String sim2 = simInfo1.getDisplayName().toString();
-            String comment = "Carrier is: " + sim1 + "\n" + "Operator name is: " + sim2;
+            String comment = "Carrier sim 1 is: " + sim1 + "\n" + "Carrier sim 2 is: " + sim2;
             fillDisplay2(comment);
+
+
 
         } else {
             //if there is 1 sim in dual sim mobile
@@ -124,13 +133,20 @@ public class MainActivity extends AppCompatActivity {
                 off = "EOCNOFF";
         }
         if(sim_Slot == 1) {
-            SmsManager.getSmsManagerForSubscriptionId(0).sendTextMessage(phone, null, message, null, null);
+            fillDisplay1("message was sent using sim 1");
+            //SmsManager.getSmsManagerForSubscriptionId(0).sendTextMessage(phone, null, message, null, null);
+            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(0);
+            smsManager.sendTextMessage(phone, null, message, null, null);
             fillDisplay1("message was sent using sim 1");
 
         } else if (sim_Slot == 2) {
-            SmsManager.getSmsManagerForSubscriptionId(1).sendTextMessage(phone, null, message, null, null);
+            //SmsManager.getSmsManagerForSubscriptionId(1).sendTextMessage(phone, null, message, null, null);
+            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(1);
+            smsManager.sendTextMessage(phone, null, message, null, null);
             fillDisplay1("message was sent using sim 2");
         } else {
+            int id = SmsManager.getDefaultSmsSubscriptionId();
+            smsManager = this.getSystemService(SmsManager.class) .createForSubscriptionId(id);
             smsManager.sendTextMessage(phone, null, message, null, null);
             fillDisplay1("message was sent using default sim");
         }
